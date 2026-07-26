@@ -50,12 +50,12 @@ export default function BuildingsPage() {
               <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/40 px-3 py-2">
                 <span>Digital twin</span><span className="font-medium">{building.twin}</span>
               </div>
-              <Button variant="outline" className="w-full justify-between rounded-xl" onClick={() => setSelectedBuildingId(building.id)} render={
+              <Button variant="outline" className="w-full justify-between rounded-xl" render={
                 <Link href={`/buildings/${building.id}`}>
                   Open details
                   <ChevronRight className="size-4" />
                 </Link>
-              } />
+              } onClick={() => setSelectedBuildingId(building.id)} />
             </CardContent>
           </Card>
         ))}

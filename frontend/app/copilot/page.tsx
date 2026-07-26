@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { useAiChatMutation } from "@/hooks/use-backend-queries"
 import { useAppStore } from "@/store/app-store"
-import type { DecisionGoal } from "@/types/api"
+import type { CopilotMessage } from "@/store/app-store"
 
 const promptSchema = z.object({
   message: z.string().min(2, "Enter a prompt for the copilot"),
@@ -21,12 +21,6 @@ const promptSchema = z.object({
 })
 
 type PromptForm = z.infer<typeof promptSchema>
-
-type ChatMessage = {
-  role: "user" | "assistant"
-  content: string
-  goal?: DecisionGoal
-}
 
 function MarkdownBlock({ text }: { text: string }) {
   const blocks = React.useMemo(() => text.split(/```/g), [text])
@@ -44,13 +38,8 @@ function MarkdownBlock({ text }: { text: string }) {
 }
 
 export default function CopilotPage() {
-  const [messages, setMessages] = React.useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      content:
-        "I can synthesize decisions, build execution plans, and return a structured operating goal for the selected building.",
-    },
-  ])
+  const messages = useAppStore((state) => state.copilotMessages)
+  const addMessage = useAppStore((state) => state.addCopilotMessage)
   const [streamedText, setStreamedText] = React.useState<string>("")
   const [streaming, setStreaming] = React.useState(false)
   const selectedBuildingId = useAppStore((state) => state.selectedBuildingId)
@@ -64,18 +53,22 @@ export default function CopilotPage() {
     },
   })
 
+  React.useEffect(() => {
+    form.setValue("buildingId", selectedBuildingId ?? "")
+  }, [form, selectedBuildingId])
+
   async function onSubmit(values: PromptForm) {
-    setMessages((current) => [...current, { role: "user", content: values.message }])
+    addMessage({ role: "user", content: values.message })
     const response = await chat.mutateAsync({
       message: values.message,
       building_id: values.buildingId || selectedBuildingId || undefined,
     })
-    const nextMessage: ChatMessage = {
+    const nextMessage: CopilotMessage = {
       role: "assistant",
       content: response.response,
       goal: response.decision_goal,
     }
-    setMessages((current) => [...current, nextMessage])
+    addMessage(nextMessage)
     setStreamedText("")
     setStreaming(true)
     const chunks = response.response.split(/\s+/)
@@ -102,6 +95,11 @@ export default function CopilotPage() {
               <CardTitle>AI Copilot</CardTitle>
               <CardDescription>Decision-making assistant with structured outputs from the backend AI planner.</CardDescription>
             </div>
+          </div>
+          <div className="pt-2">
+            <Badge variant="secondary" className="rounded-full px-3 py-1">
+              {selectedBuildingId ? `Connected to twin building: ${selectedBuildingId}` : "No twin building selected"}
+            </Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">

@@ -1,18 +1,69 @@
 "use client"
 
+import Link from "next/link"
 import { Cpu, Layers3, Radar, ThermometerSun, Wind } from "lucide-react"
 
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useAppStore } from "@/store/app-store"
 
 const zones = ["Building", "Floors", "Zones", "Sensors", "HVAC", "Occupancy", "Temperature"]
+const buildings = [
+  { id: "tower-a", name: "Tower A" },
+  { id: "campus-west", name: "Campus West" },
+  { id: "hq-east", name: "HQ East" },
+  { id: "lab-north", name: "Lab North" },
+]
 
 export default function DigitalTwinPage() {
+  const selectedBuildingId = useAppStore((state) => state.selectedBuildingId)
+  const setSelectedBuildingId = useAppStore((state) => state.setSelectedBuildingId)
+
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
         <div className="text-sm uppercase tracking-[0.22em] text-muted-foreground">Digital twin</div>
         <h1 className="text-3xl font-semibold tracking-tight">Spatial Operations View</h1>
+        </div>
+        <Badge variant="secondary" className="rounded-full px-3 py-1">
+          {selectedBuildingId ? `Connected building: ${selectedBuildingId}` : "No building selected"}
+        </Badge>
       </div>
+
+      <Card className="border-border/60 bg-background/70 backdrop-blur-xl">
+        <CardHeader>
+          <CardTitle>Twin Context</CardTitle>
+          <CardDescription>Select a building to keep Digital Twin, Buildings, and AI Copilot synchronized.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {buildings.map((building) => (
+            <div key={building.id} className="space-y-3 rounded-2xl border border-border/60 bg-muted/30 p-4">
+              <div>
+                <div className="font-medium">{building.name}</div>
+                <div className="text-sm text-muted-foreground">{building.id}</div>
+              </div>
+              <div className="grid gap-2">
+                <Button
+                  variant="secondary"
+                  className="w-full rounded-xl"
+                  onClick={() => setSelectedBuildingId(building.id)}
+                >
+                  Use in Digital Twin
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full rounded-xl"
+                  render={<Link href="/copilot">Open in AI Copilot</Link>}
+                  onClick={() => setSelectedBuildingId(building.id)}
+                />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
       <Card className="border-border/60 bg-background/70 backdrop-blur-xl">
         <CardHeader>
           <CardTitle>Future 3D-ready architecture</CardTitle>

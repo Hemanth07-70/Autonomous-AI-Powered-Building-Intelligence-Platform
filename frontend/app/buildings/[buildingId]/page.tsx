@@ -1,11 +1,13 @@
 "use client"
 
+import * as React from "react"
 import { useParams } from "next/navigation"
 import { Activity, Database, Droplets, Flame, ThermometerSun, Wind } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useAppStore } from "@/store/app-store"
 
 const sections = ["Overview", "Sensors", "Energy", "Comfort", "Occupancy", "HVAC", "History", "Information"]
 
@@ -20,14 +22,24 @@ const metrics = [
 
 export default function BuildingDetailsPage() {
   const params = useParams<{ buildingId: string }>()
-  const buildingId = params.buildingId
+  const setSelectedBuildingId = useAppStore((state) => state.setSelectedBuildingId)
+
+  const rawBuildingId = params.buildingId
+  const buildingId = Array.isArray(rawBuildingId) ? rawBuildingId[0] : rawBuildingId
+  const safeBuildingId = buildingId ?? "unknown-building"
+
+  React.useEffect(() => {
+    if (buildingId) {
+      setSelectedBuildingId(buildingId)
+    }
+  }, [buildingId, setSelectedBuildingId])
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-sm uppercase tracking-[0.22em] text-muted-foreground">Building details</div>
-          <h1 className="text-3xl font-semibold tracking-tight">{buildingId.replace(/-/g, " ").toUpperCase()}</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">{safeBuildingId.replace(/-/g, " ").toUpperCase()}</h1>
           <p className="mt-2 max-w-3xl text-muted-foreground">Operational record for the selected building with data grouped by enterprise control domains.</p>
         </div>
         <Badge variant="secondary" className="rounded-full px-3 py-1">Digital twin synced</Badge>
@@ -58,7 +70,7 @@ export default function BuildingDetailsPage() {
             <Card className="border-border/60 bg-background/70 backdrop-blur-xl">
               <CardHeader>
                 <CardTitle>{section}</CardTitle>
-                <CardDescription>Operational detail for {buildingId}.</CardDescription>
+                <CardDescription>Operational detail for {safeBuildingId}.</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 {Array.from({ length: 4 }).map((_, index) => (
