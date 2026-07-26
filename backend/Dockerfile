@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install poetry
 ENV POETRY_HOME="/opt/poetry" \
-    POETRY_VIRTUALENVS_IN_PROJECT=1 \
+    POETRY_VIRTUALENVS_CREATE=false \
     POETRY_NO_INTERACTION=1 \
     POETRY_VERSION=1.7.0
 RUN pip install "poetry==$POETRY_VERSION"
@@ -19,7 +19,10 @@ RUN pip install "poetry==$POETRY_VERSION"
 # Copy poetry files
 COPY pyproject.toml poetry.lock* ./
 
-# Install dependencies
+# Create virtual environment and install dependencies
+ENV VIRTUAL_ENV=/opt/venv
+RUN python -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN poetry install --no-root --without dev
 
 # Run stage
@@ -33,8 +36,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy virtual environment from builder
-ENV VIRTUAL_ENV=/app/.venv \
-    PATH="/app/.venv/bin:$PATH"
+ENV VIRTUAL_ENV=/opt/venv \
+    PATH="/opt/venv/bin:$PATH"
 COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # Copy application code

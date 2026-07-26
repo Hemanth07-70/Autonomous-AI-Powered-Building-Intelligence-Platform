@@ -1,9 +1,7 @@
-version: "3.8"
-
 services:
   api:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     image: intellibuild-api:latest
     container_name: intellibuild_api
@@ -18,8 +16,23 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - .:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      - ./backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: intellibuild-frontend:latest
+    container_name: intellibuild_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://api:8000
+      - NODE_ENV=production
+    depends_on:
+      - api
 
   db:
     image: postgres:15-alpine
