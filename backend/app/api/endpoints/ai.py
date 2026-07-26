@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
 
-from app.ai.client import OllamaClient
+from app.ai.client import NvidiaClient
 from app.ai.exceptions import (
     AIConnectionError,
     InvalidAIResponse,
@@ -16,6 +16,7 @@ from app.ai.schemas import (
 )
 from app.core.exceptions import BadRequestException
 from app.orchestrator.decision_models import DecisionGoal
+from app.config.settings import settings
 
 router = APIRouter(prefix="/api/ai")
 
@@ -24,12 +25,12 @@ def get_ai_planner(request: Request) -> AIPlanner:
     return request.app.state.ai_planner
 
 
-def get_ollama_client(request: Request) -> OllamaClient:
-    return request.app.state.ollama_client
+def get_ai_client(request: Request) -> NvidiaClient:
+    return request.app.state.ai_client
 
 
 @router.post("/chat", response_model=AIChatResponse, summary="AI Chat")
-async def chat(payload: AIChatRequest, request: Request) -> AIChatResponse:
+def chat(payload: AIChatRequest, request: Request) -> AIChatResponse:
     planner = get_ai_planner(request)
     try:
         response, goal = planner.chat(payload.message, building_id=payload.building_id)
@@ -44,7 +45,7 @@ async def chat(payload: AIChatRequest, request: Request) -> AIChatResponse:
 
 
 @router.post("/plan", response_model=DecisionGoal, summary="Create AI Decision Goal")
-async def plan(payload: AIChatRequest, request: Request) -> DecisionGoal:
+def plan(payload: AIChatRequest, request: Request) -> DecisionGoal:
     planner = get_ai_planner(request)
     try:
         return planner.plan(payload.message, building_id=payload.building_id)
@@ -59,7 +60,7 @@ async def plan(payload: AIChatRequest, request: Request) -> DecisionGoal:
 
 @router.get("/models", response_model=AIModelsResponse, summary="List AI Models")
 async def models(request: Request) -> AIModelsResponse:
-    client = get_ollama_client(request)
+    client = get_ai_client(request)
     try:
         return AIModelsResponse(
             models=client.list_models(),
@@ -71,8 +72,9 @@ async def models(request: Request) -> AIModelsResponse:
 
 @router.get("/health", response_model=AIHealthResponse, summary="AI Health Check")
 async def health(request: Request) -> AIHealthResponse:
-    client = get_ollama_client(request)
+    client = get_ai_client(request)
     return AIHealthResponse(
         available=client.health_check(),
+        provider=settings.AI_PROVIDER,
         model=client.model,
     )

@@ -127,21 +127,24 @@ REST endpoints:
 ## AI Intelligence Layer
 
 Milestone 6 adds a natural-language AI layer that converts user requests into
-deterministic `DecisionGoal` objects through Ollama. The AI never executes
+deterministic `DecisionGoal` objects through the NVIDIA Cloud AI API. The AI never executes
 simulations and never communicates with EnergyPlus. All execution continues
 through the existing Decision Engine.
 
 Configuration:
 
-- `OLLAMA_HOST` (default: `http://localhost:11434`)
-- `OLLAMA_MODEL` (default: `qwen3`)
-- `OLLAMA_TIMEOUT` (default: `30.0`)
+- `AI_PROVIDER` (default: `nvidia`)
+- `NVIDIA_API_KEY` (required: your NVIDIA API Key)
+- `NVIDIA_MODEL` (default: `meta/llama-3.1-70b-instruct`)
+- `NVIDIA_BASE_URL` (default: `https://integrate.api.nvidia.com/v1`)
+- `AI_TEMPERATURE` (default: `0.2`)
+- `AI_MAX_TOKENS` (default: `2048`)
+- `AI_TIMEOUT` (default: `120.0`)
 
 REST endpoints:
 
 - `POST /api/ai/chat`
 - `POST /api/ai/plan`
-- `GET /api/ai/models`
 - `GET /api/ai/health`
 
 See [AI Intelligence Layer Design](design/ai-intelligence-layer.md) for full

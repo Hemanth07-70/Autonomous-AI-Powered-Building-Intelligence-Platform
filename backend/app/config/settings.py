@@ -20,10 +20,14 @@ class Settings(BaseSettings):
         "postgresql+asyncpg://postgres:postgres@localhost:5432/intellibuild"
     )
 
-    # Ollama settings
-    OLLAMA_HOST: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "qwen3"
-    OLLAMA_TIMEOUT: float = 30.0
+    # AI Provider settings
+    AI_PROVIDER: str = "nvidia"
+    NVIDIA_API_KEY: str = ""
+    NVIDIA_MODEL: str = "meta/llama-3.1-70b-instruct"
+    NVIDIA_BASE_URL: str = "https://integrate.api.nvidia.com/v1"
+    AI_TEMPERATURE: float = 0.2
+    AI_MAX_TOKENS: int = 2048
+    AI_TIMEOUT: float = 120.0
 
     model_config = SettingsConfigDict(
         env_file=".env",

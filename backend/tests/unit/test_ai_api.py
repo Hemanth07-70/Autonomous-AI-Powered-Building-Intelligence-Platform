@@ -7,7 +7,7 @@ from app.scheduler.simulation_orchestrator import SimulationOrchestrator
 from app.shared.enums import GoalType
 
 
-class MockOllamaClient:
+class MockNvidiaClient:
     model = "qwen3"
 
     def health_check(self):
@@ -39,7 +39,7 @@ def make_client() -> TestClient:
     app = create_app()
     app.state.simulation_orchestrator = SimulationOrchestrator()
     app.state.decision_engine = DecisionEngine(app.state.simulation_orchestrator)
-    app.state.ollama_client = MockOllamaClient()
+    app.state.ai_client = MockNvidiaClient()
     app.state.ai_planner = MockAIPlanner(app.state.decision_engine)
     return TestClient(app)
 
@@ -88,7 +88,7 @@ def test_ai_health_endpoint():
     response = client.get("/api/ai/health")
 
     assert response.status_code == 200
-    assert response.json() == {"available": True, "model": "qwen3"}
+    assert response.json() == {"available": True, "provider": "nvidia", "model": "qwen3"}
 
 
 class FailingAIPlanner:
@@ -103,7 +103,7 @@ def test_ai_plan_endpoint_returns_bad_request_on_invalid_response():
     app = create_app()
     app.state.simulation_orchestrator = SimulationOrchestrator()
     app.state.decision_engine = DecisionEngine(app.state.simulation_orchestrator)
-    app.state.ollama_client = MockOllamaClient()
+    app.state.ai_client = MockNvidiaClient()
     app.state.ai_planner = FailingAIPlanner()
     client = TestClient(app)
 

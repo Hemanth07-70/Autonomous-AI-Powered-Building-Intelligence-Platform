@@ -1,9 +1,8 @@
 import time
-from typing import Optional
+from typing import Optional, Any
 
 import structlog
 
-from app.ai.client import OllamaClient
 from app.ai.parser import parse_decision_goal
 from app.ai.prompts import build_prompt
 from app.orchestrator.decision_engine import DecisionEngine
@@ -19,7 +18,7 @@ class AIPlanner:
 
     def __init__(
         self,
-        client: OllamaClient,
+        client: Any,
         decision_engine: DecisionEngine,
         default_building_id: str = "building-a",
     ) -> None:

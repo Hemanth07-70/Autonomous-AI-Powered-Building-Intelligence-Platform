@@ -1,93 +1,78 @@
-import json
-from urllib.error import URLError
-
 import pytest
+import httpx
+from unittest.mock import AsyncMock, patch
 
-from app.ai.client import OllamaClient
+from app.ai.client import NvidiaClient
 from app.ai.exceptions import AIConnectionError, ModelUnavailableError
 
 
 class FakeResponse:
-    def __init__(self, payload):
-        self._payload = payload
+    def __init__(self, json_data, status_code=200):
+        self._json_data = json_data
+        self.status_code = status_code
 
-    def __enter__(self):
-        return self
+    def json(self):
+        return self._json_data
 
-    def __exit__(self, exc_type, exc, traceback):
-        return False
-
-    def read(self):
-        return json.dumps(self._payload).encode("utf-8")
-
-
-def test_list_models(monkeypatch):
-    def fake_urlopen(request, timeout):
-        return FakeResponse({"models": [{"name": "qwen3:latest"}]})
-
-    monkeypatch.setattr("app.ai.client.urlopen", fake_urlopen)
-    client = OllamaClient(host="http://ollama.test", model="qwen3", timeout=1)
-
-    assert client.list_models() == ["qwen3:latest"]
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise httpx.HTTPStatusError("error", request=None, response=self)
 
 
-def test_run_inference(monkeypatch):
-    def fake_urlopen(request, timeout):
-        return FakeResponse({"response": '{"goal_type":"HVAC"}'})
-
-    monkeypatch.setattr("app.ai.client.urlopen", fake_urlopen)
-    client = OllamaClient(host="http://ollama.test", model="qwen3", timeout=1)
-
-    assert client.run_inference("prompt") == '{"goal_type":"HVAC"}'
-
-
-def test_chat_completion(monkeypatch):
-    def fake_urlopen(request, timeout):
-        return FakeResponse({"response": '{"goal_type":"HVAC"}'})
-
-    monkeypatch.setattr("app.ai.client.urlopen", fake_urlopen)
-    client = OllamaClient(host="http://ollama.test", model="qwen3", timeout=1)
-
-    assert client.chat_completion("prompt") == '{"goal_type":"HVAC"}'
-
-
-def test_health_check_false_on_connection_error(monkeypatch):
-    def fake_urlopen(request, timeout):
-        raise URLError("offline")
-
-    monkeypatch.setattr("app.ai.client.urlopen", fake_urlopen)
-    client = OllamaClient(
-        host="http://ollama.test",
-        model="qwen3",
+@pytest.fixture
+def client():
+    return NvidiaClient(
+        api_key="test-key",
+        base_url="https://test",
+        model="test-model",
         timeout=1,
         max_retries=0,
     )
 
+
+def test_list_models(client):
+    assert client.list_models() == ["test-model"]
+
+
+@patch("httpx.AsyncClient.post", new_callable=AsyncMock)
+def test_chat_completion(mock_post, client):
+    mock_post.return_value = FakeResponse({
+        "id": "123",
+        "choices": [{"message": {"content": '{"goal_type":"HVAC"}'}}],
+        "usage": {"total_tokens": 100}
+    })
+
+    result = client.chat_completion("prompt")
+    assert result == '{"goal_type":"HVAC"}'
+
+
+@patch("httpx.AsyncClient.post", new_callable=AsyncMock)
+def test_run_inference(mock_post, client):
+    mock_post.return_value = FakeResponse({
+        "id": "123",
+        "choices": [{"message": {"content": '{"goal_type":"HVAC"}'}}],
+        "usage": {"total_tokens": 100}
+    })
+
+    result = client.run_inference("prompt")
+    assert result == '{"goal_type":"HVAC"}'
+
+
+@patch("httpx.AsyncClient.post", new_callable=AsyncMock)
+def test_health_check_false_on_connection_error(mock_post, client):
+    client.api_key = None
     assert client.health_check() is False
 
 
-def test_connection_error_after_retries(monkeypatch):
-    def fake_urlopen(request, timeout):
-        raise URLError("offline")
-
-    monkeypatch.setattr("app.ai.client.urlopen", fake_urlopen)
-    client = OllamaClient(
-        host="http://ollama.test",
-        model="qwen3",
-        timeout=1,
-        max_retries=0,
-    )
+@patch("httpx.AsyncClient.post", new_callable=AsyncMock)
+def test_connection_error_after_retries(mock_post, client):
+    mock_post.side_effect = httpx.RequestError("offline")
 
     with pytest.raises(AIConnectionError):
-        client.list_models()
+        client.chat_completion("prompt")
 
 
-def test_model_unavailable(monkeypatch):
-    def fake_urlopen(request, timeout):
-        return FakeResponse({"models": [{"name": "llama3:latest"}]})
-
-    monkeypatch.setattr("app.ai.client.urlopen", fake_urlopen)
-    client = OllamaClient(host="http://ollama.test", model="qwen3", timeout=1)
-
-    with pytest.raises(ModelUnavailableError):
+def test_model_unavailable(client):
+    client.api_key = None
+    with pytest.raises(AIConnectionError):
         client.ensure_model_available()

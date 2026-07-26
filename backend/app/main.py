@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.ai.client import OllamaClient
+from app.ai.client import NvidiaClient
 from app.ai.planner import AIPlanner
 from app.api.router import api_router
 from app.config.settings import settings
@@ -79,9 +79,9 @@ def create_app() -> FastAPI:
     )
     app.state.simulation_orchestrator = SimulationOrchestrator()
     app.state.decision_engine = DecisionEngine(app.state.simulation_orchestrator)
-    app.state.ollama_client = OllamaClient()
+    app.state.ai_client = NvidiaClient()
     app.state.ai_planner = AIPlanner(
-        app.state.ollama_client,
+        app.state.ai_client,
         app.state.decision_engine,
     )
     app.state.task_scheduler = TaskScheduler()

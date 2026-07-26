@@ -17,6 +17,7 @@ class AIChatResponse(BaseModel):
 
 class AIHealthResponse(BaseModel):
     available: bool
+    provider: str
     model: str
 
 

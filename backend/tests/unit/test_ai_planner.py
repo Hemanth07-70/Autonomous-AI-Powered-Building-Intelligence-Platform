@@ -4,7 +4,7 @@ from app.scheduler.simulation_orchestrator import SimulationOrchestrator
 from app.shared.enums import GoalType
 
 
-class MockOllamaClient:
+class MockNvidiaClient:
     model = "qwen3"
 
     def __init__(self):
@@ -25,7 +25,7 @@ class MockOllamaClient:
 
 
 def test_ai_planner_generates_decision_goal():
-    client = MockOllamaClient()
+    client = MockNvidiaClient()
     decision_engine = DecisionEngine(SimulationOrchestrator())
     planner = AIPlanner(client, decision_engine)
 
@@ -39,7 +39,7 @@ def test_ai_planner_generates_decision_goal():
 
 
 def test_ai_planner_chat_response_contains_goal():
-    planner = AIPlanner(MockOllamaClient(), DecisionEngine(SimulationOrchestrator()))
+    planner = AIPlanner(MockNvidiaClient(), DecisionEngine(SimulationOrchestrator()))
 
     response, goal = planner.chat("Run thermal comfort analysis")
 
