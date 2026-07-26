@@ -1,0 +1,4 @@
+run_id,building_id,scenario,baseline_kwh,optimized_kwh,reduction_pct,baseline_avg_temp_c,optimized_avg_temp_c,comfort_min_c,comfort_max_c,comfort_compliance_pct,notes
+run_001,tower-a,weekday_hvac_opt,,,,,,,,,
+run_002,campus-west,occupancy_shift_opt,,,,,,,,,
+run_003,hq-east,setpoint_schedule_opt,,,,,,,,,
